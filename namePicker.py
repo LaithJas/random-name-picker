@@ -1,7 +1,7 @@
 # Developer: Laith
 # A small game that display names randomly and shows fastest and slowest results at the end
 
-import pygame, time, namePickerLogic
+import pygame, time, namePickerLogic, random
 
 
 #Enter the names of the players here
@@ -28,6 +28,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT)) #define a window
 pygame.display.set_caption('Daily Standup :)')
 wide_font = pygame.font.Font(None, 64)
 small_font = pygame.font.Font(None, 48)
+xs_font = pygame.font.Font(None, 32)
 
 # Load images
 start_image = pygame.image.load('start_btn.png').convert_alpha()
@@ -37,7 +38,28 @@ next_image = pygame.image.load('next2.png').convert_alpha()
 start_btn = namePickerLogic.Button(200, 400, start_image, 0.75, screen)
 next_btn =  namePickerLogic.Button(400, 400, next_image, 0.50, screen)
 
-# switch_scence() is responsible for switching between the 3 main scences
+# Everything for bouncing
+colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
+text_bounce = "SRE"
+# Logo settings for the bouncing DVD logo
+logo_width, logo_height = 150, 75
+logo = pygame.Surface((logo_width, logo_height), pygame.SRCALPHA)
+logo.fill((0, 0, 0, 0))  # Transparent rectangle
+logo_rect = logo.get_rect()
+logo_rect.x = random.randint(0, SCREEN_WIDTH - logo_rect.width)
+logo_rect.y = random.randint(0, SCREEN_HEIGHT - logo_rect.height)
+logo_speed = [1, 1]  # Speed of the logo
+
+# Font settings for Bouncing Logo
+# TODO: is this right?
+font = pygame.font.Font(None, 60)
+text_font = pygame.font.Font(None, 40)
+global current_color, text, text_rect
+current_color = random.choice(colors)
+text = font.render(text_bounce, True, current_color)
+text_rect = text.get_rect(center=(logo_width // 2, logo_height // 2))
+
+# switch_scene() is responsible for switching between the 3 main scences
 # the start/intro, the name display, and the results scences
 # it will also choose the first player and start the timer
 # If you want to choose a player that starts the game, you change the display_name var in here 
@@ -47,6 +69,32 @@ def switch_scene(scene):
     if scene == NAME_SCENE:
         displayed_name = gamers.choose_name()  # Choose a new name only when switching to NAME_SCENE
         name_display_start_time = time.time()  # Record the start time for the current name
+
+def run_bouncing_logo():
+    global current_color
+    font = pygame.font.Font(None, 60)
+    text_font = pygame.font.Font(None, 40)
+    # current_color = random.choice(colors)
+    text = font.render(text_bounce, True, current_color)
+    text_rect = text.get_rect(center=(logo_width // 2, logo_height // 2))
+    # Move the bouncing logo
+    logo_rect.x += logo_speed[0]
+    logo_rect.y += logo_speed[1]
+    # Bounce off edges and change text color
+    if logo_rect.left <= 0 or logo_rect.right >= SCREEN_WIDTH:
+        logo_speed[0] = -logo_speed[0]
+        current_color = random.choice(colors)
+        text = font.render(text_bounce, True, current_color)
+
+    if logo_rect.top <= 0 or logo_rect.bottom >= SCREEN_HEIGHT:
+        logo_speed[1] = -logo_speed[1]
+        current_color = random.choice(colors)
+        text = font.render(text_bounce, True, current_color)
+
+    # Draw the menu
+    logo.fill((0, 0, 0, 0))  # Keep logo transparent
+    logo.blit(text, text_rect)  # Draw text on the logo surface
+    screen.blit(logo, logo_rect)  # Draw the logo on the screen
 
 # Initial setup
 current_scene = MAIN_SCENE
@@ -72,7 +120,12 @@ while run:
         # every time you see this pattern, it is rendering something and then printing it on the screen
         main_text = wide_font.render("Press Start to Begin", True, BLACK)
         screen.blit(main_text, (SCREEN_WIDTH // 2 - main_text.get_width() // 2, SCREEN_HEIGHT // 2 - 100))
-         
+
+        # Load images
+        start_image = pygame.image.load('start_btn.png').convert_alpha()
+        next_image = pygame.image.load('next2.png').convert_alpha()
+        run_bouncing_logo()
+
     elif current_scene == NAME_SCENE:
         if displayed_name is not None:
             name_text = wide_font.render(displayed_name, True, BLACK)
